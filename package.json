@@ -1,0 +1,17 @@
+{
+  "name": "chibb-processor",
+  "version": "1.0.0",
+  "description": "Data processor for the CHIBB MQTT",
+  "main": "server.js",
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "config": "^1.25.1",
+    "mongodb": "^2.2.24",
+    "mqtt": "^2.5.2"
+  },
+  "devDependencies": {
+    "eslint": "^3.17.1",
+    "eslint-config-warp": "^1.2.0"
+  }
+}

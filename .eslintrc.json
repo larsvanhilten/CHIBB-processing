@@ -1,0 +1,10 @@
+{
+  "extends": ["warp/node", "warp/es6"],
+  "root": true,
+  "env": {
+    "browser": true
+  },
+  "rules":{
+    "no-console": ["warn", { "allow": ["warn", "error"] }]
+  }
+}
