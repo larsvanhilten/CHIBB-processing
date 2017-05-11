@@ -1,36 +1,46 @@
 const config = require('config');
-const mqtt = require('mqtt');
+const mqtt = require('./mqtt');
 const mongoClient = require('mongodb');
+const _ = require('lodash');
 
-let db;
-
-mongoClient.connect(config.mongo.url)
-.then(connection => {
-  db = connection.collection(config.mongo.collection);
-})
-.catch(err => {
-  console.error(err);
-});
-
-const clientOptions = {
+const defaultClient = {
+  url: config.mqtt.url,
   port: config.mqtt.port,
-  clientId: `mqttjs_${Math.random().toString(16).substr(2, 8)}`,
+  channel: config.mqtt.channel,
   username: config.mqtt.username,
   password: config.mqtt.password
 };
 
-const client = mqtt.connect(config.mqtt.url, clientOptions);
+mongoClient.connect(config.mongo.url)
+.then(connection => {
+  const db = connection.collection('brokers');
+  mqtt.connect(defaultClient);
 
-client.on('connect', () => {
-  client.subscribe('sensors');
+  const activeBrokers = [];
+  const activeClients = {};
+  setInterval(() => {
+    db.find().toArray()
+    .then(results => {
+      const newBrokers = _.difference(results, activeBrokers);
+      _.forEach(newBrokers, broker => {
+        const client = mqtt.connect(broker);
+        activeBrokers.push(broker);
+        activeClients[broker.name] = client;
+      });
+
+      const oldBrokers = _.difference(activeBrokers, results);
+      _.forEach(oldBrokers, broker => {
+        activeClients[broker.name].end();
+        delete activeClients[broker.name];
+        const index = activeBrokers.indexOf(broker);
+        activeBrokers.splice(index, 1);
+      });
+    })
+    .catch(err => {
+      console.error(err);
+    });
+  }, config.mongo.checkInterval * 1000);
+})
+.catch(err => {
+  console.error(err);
 });
-
-client.on('message', (topic, message) => {
-  const object = JSON.parse(message);
-
-  db.insertMany(object.readings)
-  .catch(err => {
-    console.error(err);
-  });
-});
-
