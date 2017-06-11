@@ -30,10 +30,12 @@ mongoClient.connect(config.mongo.url)
 
       const oldBrokers = _.difference(activeBrokers, results);
       _.forEach(oldBrokers, broker => {
-        activeClients[broker.name].end();
-        delete activeClients[broker.name];
-        const index = activeBrokers.indexOf(broker);
-        activeBrokers.splice(index, 1);
+        if(activeClients[broker.name].connected) {
+          activeClients[broker.name].end();
+          delete activeClients[broker.name];
+          const index = activeBrokers.indexOf(broker);
+          activeBrokers.splice(index, 1);
+        }
       });
     })
     .catch(err => {
